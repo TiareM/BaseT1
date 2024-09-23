@@ -15,6 +15,10 @@ int main(int argc, char const *argv[])
 	char name[10];
 	int pid, t_start, t_cpu_burst, n_burst, io_wait, t_deadline;
 
+	// Queues
+	Queue* High = NULL;
+	Queue* Low = NULL;
+
 	/*Mostramos el archivo de input en consola*/
 	printf("Nombre archivo: %s\n", file_name);
 	printf("Cantidad de procesos: %d\n", input_file->len);
@@ -30,12 +34,16 @@ int main(int argc, char const *argv[])
         t_deadline = atoi(input_file->lines[i][6]);
 		Process* process = init_process( name, pid, t_start, t_cpu_burst, n_burst, io_wait, t_deadline);
 
+		add_process(&High, process);
+
 		for (int j = 0; j < 7; ++j)
 		{
 			printf("%s ", input_file->lines[i][j]);
 		}
 		printf("\n");
 	}
+
+	print_queue(High);
 
 	input_file_destroy(input_file);
 }
