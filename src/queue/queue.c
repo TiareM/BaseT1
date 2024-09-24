@@ -9,8 +9,16 @@ Queue* create_node(Process* process) {
 
 void add_process(Queue** head, Process* process) {
     Queue* new_node = create_node(process);
-    new_node->next = *head;
-    *head = new_node;
+    
+    if (*head == NULL) {
+        *head = new_node;
+    } else {
+        Queue* current = *head;
+        while (current->next != NULL) {
+            current = current->next;
+        }
+        current->next = new_node;
+    }
 }
 
 Process* extract_process(Queue** head, int pid) {
@@ -40,7 +48,6 @@ void free_queue(Queue* head) {
     Queue* current = head;
     while (current != NULL) {
         Queue* next = current->next;
-        free(current->process);
         free(current);                    
         current = next;
     }
