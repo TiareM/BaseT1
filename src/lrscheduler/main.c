@@ -80,36 +80,7 @@ int main(int argc, char const *argv[])
 			}
 		}
 
-		// Actualiza estado si hay un proceso en estado RUNNING
-		if (CPU) {
-			if (CPU->current_t_burst == CPU->t_cpu_burst) {
-				if (CPU->current_n_burst < CPU->n_burst) {
-					strcpy(CPU->state, "WAITING");
-					CPU->current_n_burst++;
-					CPU->T_LCPU = current_time;
-					CPU = NULL;
-				} else {
-					strcpy(CPU->state, "FINISHED");
-					CPU->turnaround_time = current_time - CPU->t_start;
-					completed_processes++;
-					CPU = NULL;
-				}
-			} else if (CPU->current_quantum == CPU->quantum) {
-				strcpy(CPU->state, "READY");
-				CPU->T_LCPU = current_time;
-				CPU->current_quantum = 0;
-				CPU->quantum = q;
-				CPU->num_interruptions++;
-				if (!CPU->in_low) {
-					add_process(&Low, CPU);
-				}
-				CPU = NULL;
-			} else {
-				CPU->current_quantum++;
-				CPU->current_t_burst++;
-			}
-		}
-
+		
         // Se agregan al queue los procesos de acuerdo a su t_start
         for (int i = 0; i < num_processes; i++) {
             if (processes[i]->t_start == current_time) {
@@ -128,12 +99,53 @@ int main(int argc, char const *argv[])
         	current = current->next;
     	}
 
+		// Actualiza estado si hay un proceso en estado RUNNING
+		if (CPU != NULL) {
+			if (CPU->current_t_burst == CPU->t_cpu_burst) {
+				if (CPU->current_n_burst < CPU->n_burst) {
+					strcpy(CPU->state, "WAITING");
+					CPU->current_n_burst++;
+					CPU->T_LCPU = current_time;
+					CPU = NULL;
+				} else {
+					strcpy(CPU->state, "FINISHED");
+					CPU->turnaround_time = current_time - CPU->t_start;
+					completed_processes++;
+					if (CPU->in_low){
+						extract_process(&Low, CPU->pid);
+					}
+					else {
+						extract_process(&High, CPU->pid);
+					}
+					CPU = NULL;
+				}
+			} else if (CPU->current_quantum == CPU->quantum) {
+				strcpy(CPU->state, "READY");
+				CPU->T_LCPU = current_time;
+				CPU->current_quantum = 0;
+				CPU->quantum = q;
+				CPU->num_interruptions++;
+				if (!CPU->in_low) {
+					add_process(&Low, CPU);
+				}
+				CPU = NULL;
+			} else {
+				CPU->current_quantum++;
+				CPU->current_t_burst++;
+				printf("current quantum %d\n", CPU->current_quantum);
+				printf("current t_burst %d\n", CPU->current_t_burst);
+				printf("current t_burst %d\n", CPU->t_cpu_burst);
+			}
+		}
+
 		// Aqui verifica si la CPU esta vacia y si es asi extrae un proceso de la cola
 		// Ingresa el proceso de mayor prioridad en estado READY a la CPU
 		if (CPU == NULL) {
             if (High != NULL) {
 				CPU = select_highest_priority_process(High, current_time);
 				if (CPU != NULL) {
+					printf("CPU PID %d\n",CPU->pid);
+					printf("quantum cpu %d\n", CPU->quantum);
 					if (CPU->first_cpu_entry_time == -1) {
 						CPU->first_cpu_entry_time = current_time; // flag se guarda con el current_time
 						CPU->response_time = current_time - CPU->t_start; // Calcular el response time
@@ -143,12 +155,17 @@ int main(int argc, char const *argv[])
 					}
 					strcpy(CPU->state, "RUNNING");
 				}
+	
             } else if (Low != NULL) {
                 CPU = select_highest_priority_process(Low, current_time);
 				if (CPU != NULL) {
+					printf("CPU PID low %d\n",CPU->pid);
 					if (CPU->first_cpu_entry_time == -1) {
 						CPU->first_cpu_entry_time = current_time; // flag se guarda con el current_time
 						CPU->response_time = current_time - CPU->t_start; // Calcular el response time
+					}
+					if (current_time > CPU->t_deadline) {
+						CPU->sum_deadline_time++;
 					}
 					strcpy(CPU->state, "RUNNING");
 				}
@@ -156,6 +173,7 @@ int main(int argc, char const *argv[])
         }
 
 		current_time++;
+
 	}
 
 	print_results(output_file, processes, num_processes, current_time);
@@ -194,11 +212,7 @@ Process* select_highest_priority_process(Queue* queue, int Tactual) {
         current = current->next;
     }
 
-    if (selected_process != NULL) {
-        return extract_process(&queue, selected_process->pid);
-    }
-
-    return NULL;
+    return selected_process;
 }
 
 // Función para imprimir el output en el csv
