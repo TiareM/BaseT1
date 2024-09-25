@@ -66,6 +66,9 @@ int main(int argc, char const *argv[])
 	Process* CPU = NULL;
 
 	while (completed_processes < num_processes) {
+
+		// printf("--------- Tiempo: %d ---------\n", current_time);
+
 		// Actualiza los procesos que han terminado su tiempo de espera de I/O
 		for (int i = 0; i < num_processes; i++) {
 			if (strcmp(processes[i]->state, "WAITING") == 0) {
@@ -101,6 +104,16 @@ int main(int argc, char const *argv[])
 
 		// Actualiza estado si hay un proceso en estado RUNNING
 		if (CPU != NULL) {
+			// printf("Proceso: %s\n", CPU->name);
+
+			if (CPU->current_quantum != CPU->quantum && CPU->current_t_burst != CPU->t_cpu_burst) {
+				CPU->current_quantum++;
+				CPU->current_t_burst++;
+			}
+
+			// printf("Quantum actual: %d\n", CPU->current_quantum);
+			// printf("Burst actual: %d\n", CPU->current_t_burst);
+
 			if (CPU->current_t_burst == CPU->t_cpu_burst) {
 				if (CPU->current_n_burst < CPU->n_burst) {
 					strcpy(CPU->state, "WAITING");
@@ -129,13 +142,7 @@ int main(int argc, char const *argv[])
 					add_process(&Low, CPU);
 				}
 				CPU = NULL;
-			} else {
-				CPU->current_quantum++;
-				CPU->current_t_burst++;
-				printf("current quantum %d\n", CPU->current_quantum);
-				printf("current t_burst %d\n", CPU->current_t_burst);
-				printf("current t_burst %d\n", CPU->t_cpu_burst);
-			}
+			} 
 		}
 
 		// Aqui verifica si la CPU esta vacia y si es asi extrae un proceso de la cola
@@ -144,8 +151,6 @@ int main(int argc, char const *argv[])
             if (High != NULL) {
 				CPU = select_highest_priority_process(High, current_time);
 				if (CPU != NULL) {
-					printf("CPU PID %d\n",CPU->pid);
-					printf("quantum cpu %d\n", CPU->quantum);
 					if (CPU->first_cpu_entry_time == -1) {
 						CPU->first_cpu_entry_time = current_time; // flag se guarda con el current_time
 						CPU->response_time = current_time - CPU->t_start; // Calcular el response time
