@@ -19,6 +19,14 @@ typedef struct process {
     int current_quantum;      // Tiempo ejecutado del quantum
     bool in_low;              // Si esta en la cola Low
     int T_LCPU;               // El tiempo (tick) en que el proceso salio por ultima vez de la CPU
+    // para el output file
+    int first_cpu_entry_time; // Tiempo en que entró por primera vez a la CPU
+    int num_interruptions;
+    int turnaround_time;
+    int response_time;
+    int waiting_time;
+    int sum_deadline_time;
 } Process;
 
 Process* init_process(char* name, int pid, int t_start, int t_cpu_burst, int n_burst, int io_wait, int t_deadline);
+void destroy_process(Process* process);

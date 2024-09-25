@@ -17,6 +17,18 @@ Process* init_process(char* name, int pid, int t_start, int t_cpu_burst, int n_b
     process->current_n_burst = 0;
     process->in_low = false;
     process->T_LCPU = 0;
+    process->first_cpu_entry_time = -1;
+    process->num_interruptions = 0;
+    process->turnaround_time = 0;
+    process->response_time = 0;
+    process->waiting_time = 0;
+    process->sum_deadline_time = 0;
 
     return process;
+}
+
+void destroy_process(Process* process) {
+    if (process) {
+        free(process);
+    }
 }
